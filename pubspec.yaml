@@ -1,0 +1,16 @@
+name: monitor
+description: A cli tool written in pure dart for reloading commands on file/dir modification 
+version: 0.0.1
+repository: https://github.com/maranix/monitor
+
+environment:
+  sdk: ^3.3.4
+
+# Add regular dependencies here.
+dependencies:
+  args: ^2.5.0
+  watcher: ^1.1.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0
