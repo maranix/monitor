@@ -1,3 +1,5 @@
-int calculate() {
-  return 6 * 7;
-}
+library monitor;
+
+export 'src/cmd.dart';
+export 'src/parser.dart';
+
