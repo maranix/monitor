@@ -25,22 +25,19 @@ final class ParsedOptions {
   final String path;
   final Command command;
 
-  static bool _isFile(path) {
-    return io.FileSystemEntity.isFileSync(path);
-  }
-
-  static bool _isDirectory(path) {
-    return io.FileSystemEntity.isDirectorySync(path);
+  static bool _isPathValid(path) {
+    return io.FileSystemEntity.isFileSync(path) ||
+        io.FileSystemEntity.isDirectorySync(path);
   }
 
   static String _parseAndValidatePath(args.ArgResults results) {
     String? namedParam = results[CLIOptionsEnum.path.name];
-    if (namedParam != null) {
+    if (namedParam != null && _isPathValid(namedParam)) {
       return namedParam;
     }
 
     String unnamedParam = results.rest.first;
-    if (_isFile(unnamedParam) || _isDirectory(unnamedParam)) {
+    if (_isPathValid(unnamedParam)) {
       return unnamedParam;
     }
 
@@ -76,11 +73,11 @@ final class ParsedOptions {
   }
 
   factory ParsedOptions.fromArgResults(args.ArgResults results) {
-    final parseResult = _fromArgResults(results);
+    final parsedResult = _fromArgResults(results);
 
     return ParsedOptions(
-      path: parseResult.path,
-      command: parseResult.cmd,
+      path: parsedResult.path,
+      command: parsedResult.cmd,
     );
   }
 
