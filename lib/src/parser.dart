@@ -1,6 +1,6 @@
 import 'package:args/args.dart' as args;
 import 'package:monitor/src/models.dart';
-import 'package:monitor/src/options.dart';
+import 'package:monitor/src/cli_options.dart';
 
 final class CLIParser {
   CLIParser._({
@@ -8,7 +8,7 @@ final class CLIParser {
     required args.ArgResults argResults,
   })  : _parser = parser,
         _argResults = argResults,
-        _options = ParsedOptions.fromArgResults(argResults);
+        _options = Options.fromArgResults(argResults);
 
   /// Main instance of [ArgParser]
   final args.ArgParser _parser;
@@ -16,9 +16,9 @@ final class CLIParser {
   /// Results from the provided [ArgParser]
   final args.ArgResults _argResults;
 
-  final ParsedOptions _options;
+  final Options _options;
 
-  ParsedOptions get options => _options;
+  Options get options => _options;
 
   factory CLIParser(
     List<String> arguments, [

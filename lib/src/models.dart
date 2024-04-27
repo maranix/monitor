@@ -2,7 +2,7 @@ import 'dart:io' as io;
 
 import 'package:args/args.dart' as args;
 import 'package:monitor/src/exceptions.dart';
-import 'package:monitor/src/options.dart';
+import 'package:monitor/src/cli_options.dart';
 import 'package:path/path.dart' as p;
 
 typedef ParseResult = ({String path, Command cmd});
@@ -10,14 +10,14 @@ typedef ParseResult = ({String path, Command cmd});
 enum ExitCodeEnum {
   error(1),
   invalidPath(2),
-  executableNotFound(127);
+  processError(127);
 
   const ExitCodeEnum(this.val);
   final int val;
 }
 
-final class ParsedOptions {
-  const ParsedOptions({
+final class Options {
+  const Options({
     required this.path,
     required this.command,
   });
@@ -62,20 +62,20 @@ final class ParsedOptions {
 
       return (path: path, cmd: command);
     } on DirectoryOrFileDoesNotExist catch (e) {
-      io.stderr.writeln(e.toString());
+      io.stderr.writeln(e);
       io.exitCode = ExitCodeEnum.invalidPath.val;
     } catch (e) {
-      io.stderr.writeln(e.toString());
+      io.stderr.writeln(e);
       io.exitCode = ExitCodeEnum.error.val;
     } finally {
       io.exit(io.exitCode);
     }
   }
 
-  factory ParsedOptions.fromArgResults(args.ArgResults results) {
+  factory Options.fromArgResults(args.ArgResults results) {
     final parsedResult = _fromArgResults(results);
 
-    return ParsedOptions(
+    return Options(
       path: parsedResult.path,
       command: parsedResult.cmd,
     );
@@ -88,9 +88,7 @@ final class ParsedOptions {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is ParsedOptions &&
-        path == other.path &&
-        command == other.command;
+    return other is Options && path == other.path && command == other.command;
   }
 
   @override
@@ -107,6 +105,39 @@ final class Command {
 
   final String executable;
   final List<String> params;
+
+  Future<io.Process> _run(String workingDirectory) async {
+    try {
+      final process = await io.Process.start(
+        executable,
+        params,
+        workingDirectory: workingDirectory,
+      ).onError(
+        (error, stackTrace) {
+          throw CouldNotSpawnProcess(
+            executable,
+            params,
+            error: error,
+            stackTrace: stackTrace,
+          );
+        },
+      );
+
+      return process;
+    } on CouldNotSpawnProcess catch (e) {
+      io.exitCode = ExitCodeEnum.error.val;
+      io.stderr.writeln(e);
+    } catch (e) {
+      io.exitCode = ExitCodeEnum.error.val;
+      io.stderr.writeln(e);
+    } finally {
+      io.exit(io.exitCode);
+    }
+  }
+
+  Future<io.Process> exec(String workingDirectory) async {
+    return await _run(workingDirectory);
+  }
 
   factory Command.fromString(List<String> cmd) {
     return Command(
