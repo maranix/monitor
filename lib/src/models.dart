@@ -10,7 +10,7 @@ typedef ParseResult = ({String path, Command cmd});
 enum ExitCodeEnum {
   error(1),
   invalidPath(2),
-  exutableNotFound(127);
+  executableNotFound(127);
 
   const ExitCodeEnum(this.val);
   final int val;
