@@ -17,14 +17,12 @@ abstract final class CLIOptions {
         CLIOptionsEnum.path.name,
         abbr: CLIOptionsEnum.path.abbr,
         help: "path to the file or directory to monitor",
-        defaultsTo: "./",
       )
       ..addOption(
         CLIOptionsEnum.exec.name,
         abbr: CLIOptionsEnum.exec.abbr,
         help: "command to execute when the monitored path is modified",
         valueHelp: "echo \"changes detected\"",
-        defaultsTo: "",
       );
   }
 }

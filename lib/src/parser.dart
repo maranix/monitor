@@ -8,7 +8,7 @@ final class CLIParser {
     required args.ArgResults argResults,
   })  : _parser = parser,
         _argResults = argResults,
-        _options = ParsedOptions.fromArgResult(argResults);
+        _options = ParsedOptions.fromArgResults(argResults);
 
   /// Main instance of [ArgParser]
   final args.ArgParser _parser;

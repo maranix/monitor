@@ -1,7 +1,20 @@
 import 'dart:io' as io;
 
 import 'package:args/args.dart' as args;
+import 'package:monitor/src/exceptions.dart';
+import 'package:monitor/src/options.dart';
 import 'package:path/path.dart' as p;
+
+typedef ParseResult = ({String path, Command cmd});
+
+enum ExitCodeEnum {
+  error(1),
+  invalidPath(2),
+  exutableNotFound(127);
+
+  const ExitCodeEnum(this.val);
+  final int val;
+}
 
 final class ParsedOptions {
   const ParsedOptions({
@@ -12,34 +25,62 @@ final class ParsedOptions {
   final String path;
   final Command command;
 
-  Future<bool> validatePath() async {
-    if (await io.FileSystemEntity.isFile(path) ||
-        await io.FileSystemEntity.isDirectory(path)) {
-      return true;
-    }
-
-    return false;
+  static bool _isFile(path) {
+    return io.FileSystemEntity.isFileSync(path);
   }
 
-  // TODO: handle positioned paramters
-  //
-  // Running `monitor "echo something"` should watch changes in the current dir
-  // and reload `echo something` command on each modifications.
-  //
-  // For now we support flag based paramters:
-  //
-  // monitor -p "some/path" -e "echo something"
-  //
-  // or
-  //
-  // monitor -e "echo something" for pwd.
-  factory ParsedOptions.fromArgResult(args.ArgResults results) {
-    final command = Command.fromArgResult(results);
-    final path = p.normalize(p.absolute(results["path"]));
+  static bool _isDirectory(path) {
+    return io.FileSystemEntity.isDirectorySync(path);
+  }
+
+  static String _parseAndValidatePath(args.ArgResults results) {
+    String? namedParam = results[CLIOptionsEnum.path.name];
+    if (namedParam != null) {
+      return namedParam;
+    }
+
+    String unnamedParam = results.rest.first;
+    if (_isFile(unnamedParam) || _isDirectory(unnamedParam)) {
+      return unnamedParam;
+    }
+
+    throw DirectoryOrFileDoesNotExist(unnamedParam);
+  }
+
+  static List<String> _parseCommandStr(args.ArgResults results) {
+    List<String>? namedParam = results[CLIOptionsEnum.exec.name];
+    if (namedParam != null) {
+      return namedParam;
+    }
+
+    return results.rest.sublist(1, results.rest.length);
+  }
+
+  static ParseResult _fromArgResults(args.ArgResults results) {
+    try {
+      final path = p.normalize(
+        p.absolute(_parseAndValidatePath(results)),
+      );
+      final command = Command.fromString(_parseCommandStr(results));
+
+      return (path: path, cmd: command);
+    } on DirectoryOrFileDoesNotExist catch (e) {
+      io.stderr.writeln(e.toString());
+      io.exitCode = ExitCodeEnum.invalidPath.val;
+    } catch (e) {
+      io.stderr.writeln(e.toString());
+      io.exitCode = ExitCodeEnum.error.val;
+    } finally {
+      io.exit(io.exitCode);
+    }
+  }
+
+  factory ParsedOptions.fromArgResults(args.ArgResults results) {
+    final parseResult = _fromArgResults(results);
 
     return ParsedOptions(
-      path: path,
-      command: command,
+      path: parseResult.path,
+      command: parseResult.cmd,
     );
   }
 
@@ -54,6 +95,11 @@ final class ParsedOptions {
         path == other.path &&
         command == other.command;
   }
+
+  @override
+  String toString() {
+    return "ParsedOptions(path: $path, command: $command)";
+  }
 }
 
 final class Command {
@@ -65,12 +111,10 @@ final class Command {
   final String executable;
   final List<String> params;
 
-  factory Command.fromArgResult(args.ArgResults results) {
-    final parsedCommand = (results['exec'] as String).split(' ');
-
+  factory Command.fromString(List<String> cmd) {
     return Command(
-      executable: parsedCommand.first,
-      params: parsedCommand.sublist(1, parsedCommand.length),
+      executable: cmd.first,
+      params: cmd.sublist(1, cmd.length),
     );
   }
 
@@ -84,5 +128,10 @@ final class Command {
     return other is Command &&
         executable == other.executable &&
         params == other.params;
+  }
+
+  @override
+  String toString() {
+    return "Command(executable: $executable, params: $params)";
   }
 }
