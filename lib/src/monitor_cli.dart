@@ -2,8 +2,8 @@ import 'package:args/args.dart' as args;
 import 'package:monitor/src/models.dart';
 import 'package:monitor/src/cli_options.dart';
 
-final class CLIParser {
-  CLIParser._({
+final class MonitorCLI {
+  MonitorCLI._({
     required args.ArgParser parser,
     required args.ArgResults argResults,
   })  : _parser = parser,
@@ -20,7 +20,7 @@ final class CLIParser {
 
   Options get options => _options;
 
-  factory CLIParser(
+  factory MonitorCLI(
     List<String> arguments, [
     args.ArgParser? argParser,
   ]) {
@@ -29,7 +29,7 @@ final class CLIParser {
     CLIOptions.bind(parser);
     final results = parser.parse(arguments);
 
-    return CLIParser._(
+    return MonitorCLI._(
       parser: parser,
       argResults: results,
     );
