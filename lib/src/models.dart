@@ -124,9 +124,9 @@ final class Command {
       return process;
     } on CouldNotSpawnProcess catch (e) {
       io.stderr.writeln(e);
+      io.exit(ExitCodeEnum.processError.val);
     } catch (e) {
       io.stderr.writeln(e);
-    } finally {
       io.exit(ExitCodeEnum.processError.val);
     }
   }
