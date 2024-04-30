@@ -62,13 +62,11 @@ final class Options {
 
       return (path: path, cmd: command);
     } on DirectoryOrFileDoesNotExist catch (e) {
-      io.stderr.writeln(e);
-      io.exitCode = ExitCodeEnum.invalidPath.val;
+      io.stderr.writeln(e.toString());
+      io.exit(ExitCodeEnum.invalidPath.val);
     } catch (e) {
-      io.stderr.writeln(e);
-      io.exitCode = ExitCodeEnum.error.val;
-    } finally {
-      io.exit(io.exitCode);
+      io.stderr.writeln(e.toString());
+      io.exit(ExitCodeEnum.error.val);
     }
   }
 
