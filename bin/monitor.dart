@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:monitor/monitor.dart';
@@ -5,31 +6,57 @@ import 'package:watcher/watcher.dart' as w;
 
 void main(List<String> arguments) async {
   final cli = MonitorCLI(arguments);
+  // TODO: workDir and command exec dir should be separate.
+  ///
+  /// Separate out path for the entity to monitor and path where command will be
+  /// executed. By default it'll be the same as the entity path.
   final workDir = cli.options.path;
   final watch = w.Watcher(workDir);
 
   io.Process? process;
-  // TODO: debounce changeEvents and process execution queue.
-  //
-  // Subsequent event changes should be debounced and only be completed if 
-  // there were  no changes in the previous X mili/seconds. This ensures
-  // that we're not constantly spawning and killing process.
-  //
-  // Bug 1: The process doesn't spawn initially;
-  // Bug 2: Writing to a file spawns process normally and emits correct.
-  //        However, writing again emits 4 events (add, modify, modify and remove)
-  //        in no particular order. Hence 4 processes are spawned together
-  //        simutaneously.
-  watch.events.distinct().listen((changeEvent) async {
-    if (process != null) {
-      process!.kill(io.ProcessSignal.sigquit);
-    }
+  Timer? debounceTimer;
 
-    process = await cli.options.command.exec(workDir);
-    print(process?.pid);
-  }).onDone(() => _cleanup(process!));
+  watch.events.where(_modifyEvents).listen((changeEvent) async {
+    // Todo: Add Filter capability for files and folders
+    ///
+    /// By default we are monitoring for changes for all of the child paths.
+    /// This leads to a problem where any changes in the private or hidden
+    /// entities leads to reloading the command as well. Which is something
+    /// that should not happend for eg: .git, .build, in the case of some
+    /// tools such as node it'll end monitoring the whole node_modules directory.
+    if (changeEvent.path.split('/').any((e) => e.startsWith('.'))) return;
+
+    debounceTimer?.cancel();
+
+    debounceTimer = Timer(const Duration(milliseconds: 200), () async {
+      final results = await Future.wait([
+        _killProcess(process),
+        _spawnProcess(cli.options.command, workDir),
+      ]);
+
+      process = results.whereType<io.Process>().firstOrNull;
+    });
+  });
+
+  await _killProcess(process);
 }
 
-void _cleanup(io.Process process) {
-  process.kill(io.ProcessSignal.sigquit);
+bool _modifyEvents(w.WatchEvent change) {
+  return change.type == w.ChangeType.MODIFY;
+}
+
+Future<void> _killProcess(io.Process? process) async {
+  if (process != null) {
+    io.Process.killPid(process.pid, io.ProcessSignal.sigquit);
+    await process.exitCode;
+  }
+}
+
+Future<io.Process> _spawnProcess(Command cmd, String workDir) async {
+  final process = await cmd.exec(workDir);
+
+  process.stdout.listen(io.stdout.add);
+  process.stderr.listen(io.stderr.add);
+
+  return process;
 }
