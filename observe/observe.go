@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/maranix/monitor/fsutil"
@@ -42,44 +43,11 @@ func (obs *Observer) Observe() {
 	}
 
 	if dir {
-		subdirs, err := fsutil.GetSubDirPaths(obs.observablePath)
-		if err != nil {
-			slog.Error(err.Error())
-			os.Exit(1)
-		}
-
-		for _, d := range subdirs {
-			obs.add(d)
-		}
+		obs.watchDirEvents()
+	} else {
+		files := []string{obs.observablePath}
+		obs.watchFileEvents(files)
 	}
-
-	slog.Info(fmt.Sprintf("Watching %d dirs", len(obs.watcher.WatchList())))
-
-	defer obs.watcher.Close()
-
-	// Start listening for events.
-	go func() {
-		for {
-			select {
-			case event, ok := <-obs.watcher.Events:
-
-				if !ok {
-					return
-				}
-				slog.Info(fmt.Sprintf("event:%q", event))
-				if event.Has(fsnotify.Write) {
-					slog.Info(fmt.Sprintf("modified file:%q", event.Name))
-				}
-			case err, ok := <-obs.watcher.Errors:
-				if !ok {
-					return
-				}
-				slog.Error("error:", err)
-			}
-		}
-	}()
-
-	<-make(chan struct{})
 }
 
 func (obs *Observer) add(p string) {
@@ -88,4 +56,85 @@ func (obs *Observer) add(p string) {
 		slog.Error(fmt.Sprintf("%q: %s", p, err))
 		os.Exit(1)
 	}
+}
+
+func (obs *Observer) watchDirEvents() {
+	subdirs, err := fsutil.GetSubDirPaths(obs.observablePath)
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
+	for _, d := range subdirs {
+		obs.add(d)
+	}
+	slog.Info(fmt.Sprintf("Watching %d dirs", len(obs.watcher.WatchList())))
+	slog.Info(fmt.Sprintf("WatchList %v", obs.watcher.WatchList()))
+
+	defer obs.watcher.Close()
+	// Start listening for events.
+	go func() {
+		for {
+			select {
+			case event, ok := <-obs.watcher.Events:
+				if !ok {
+					return
+				}
+
+				slog.Info(fmt.Sprintf("event: %q, modified :%q", event, event.Name))
+			case err, ok := <-obs.watcher.Errors:
+				if !ok {
+					slog.Error("error:", err)
+					return
+				}
+			}
+		}
+	}()
+
+	<-make(chan struct{})
+}
+
+func (obs *Observer) watchFileEvents(files []string) {
+	filemap := make(map[string]string)
+	dirs := make([]string, 0)
+
+	for _, f := range files {
+		name := fsutil.GetFileFromPath(f)
+		dir := fsutil.GetParentDir(f)
+		filemap[name] = f
+
+		if !slices.Contains(dirs, dir) {
+			dirs = append(dirs, dir)
+			obs.add(dir)
+		}
+	}
+
+	slog.Info(fmt.Sprintf("Watching %d files", len(obs.watcher.WatchList())))
+	slog.Info(fmt.Sprintf("WatchList %v", obs.watcher.WatchList()))
+
+	defer obs.watcher.Close()
+	// Start listening for events.
+	go func() {
+		for {
+			select {
+			case event, ok := <-obs.watcher.Events:
+				if !ok {
+					return
+				}
+
+				file := fsutil.GetFileFromPath(event.Name)
+				if _, ok := filemap[file]; ok {
+					slog.Info(fmt.Sprintf("Change %q detected in %s", event, event.Name))
+				}
+
+			case err, ok := <-obs.watcher.Errors:
+				if !ok {
+					slog.Error("error:", err)
+					return
+				}
+			}
+		}
+	}()
+
+	<-make(chan struct{})
 }

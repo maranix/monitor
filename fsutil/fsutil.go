@@ -50,3 +50,12 @@ func GetSubDirPaths(p string) ([]string, error) {
 
 	return subdirs, nil
 }
+
+func GetParentDir(p string) string {
+	return filepath.Dir(p)
+}
+
+func GetFileFromPath(p string) string {
+	return filepath.Base(p)
+
+}
