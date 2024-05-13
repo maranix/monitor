@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -18,10 +19,11 @@ in configuration files or code requires restarting a service.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		pathArg := args[0]
+		cmdArg := args[1]
 
-		slog.Info(pathArg)
+		slog.Info(fmt.Sprintf("pathArg: %s, cmd: %s", pathArg, cmdArg))
 
-		obs, err := observe.Create(pathArg)
+		obs, err := observe.Create(pathArg, cmdArg)
 		if err != nil {
 			slog.Error("Failed to create an observable", err)
 		}

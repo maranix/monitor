@@ -8,14 +8,16 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/maranix/monitor/fsutil"
+	"github.com/maranix/monitor/runner"
 )
 
 type Observer struct {
 	watcher        *fsnotify.Watcher
 	observablePath string
+	command        string
 }
 
-func Create(p string) (*Observer, error) {
+func Create(p string, c string) (*Observer, error) {
 	path, err := fsutil.AbsPath(p)
 	if err != nil {
 		return nil, err
@@ -29,6 +31,7 @@ func Create(p string) (*Observer, error) {
 	obs := &Observer{
 		watcher:        watcher,
 		observablePath: path,
+		command:        c,
 	}
 
 	return obs, nil
@@ -82,6 +85,9 @@ func (obs *Observer) watchDirEvents() {
 				}
 
 				slog.Info(fmt.Sprintf("event: %q, modified :%q", event, event.Name))
+				slog.Info(fmt.Sprintf("executing command %s", obs.command))
+
+				runner.Run(obs.command)
 			case err, ok := <-obs.watcher.Errors:
 				if !ok {
 					slog.Error("error:", err)
