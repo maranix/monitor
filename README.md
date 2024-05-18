@@ -2,6 +2,14 @@
 
 Monitor is a CLI tool for reloading commands/services on filesystem changes using GoLang. It leverages the `cobra` and `fsnotify` packages to watch for changes in a specified directory and execute a command when changes are detected.
 
+> [!WARNING]
+> ### Project Status
+> Monitor is currently under active development and is a part of my daily development workflow.
+>
+> As I am still learning GoLang, the APIs, features, and other aspects of the tool are subject to regular changes. This project serves as both a practical tool and a learning experience.
+>
+> I welcome any suggestions on features, code practices, and improvements. If you have any feedback, please feel free to open an issue. I'd love to learn more and discuss potential enhancements!
+
 ## Features
 
 - Watches a specified directory for file changes.
