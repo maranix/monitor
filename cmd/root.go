@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/maranix/monitor/observe"
+	"github.com/maranix/monitor/observer"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ func handleRun(cmd *cobra.Command, args []string) {
 	pathArg := args[0]
 	cmdArg := args[1]
 
-	obs, err := observe.Create(pathArg, cmdArg)
+	obs, err := observer.Create(pathArg, cmdArg)
 	if err != nil {
 		slog.Error("Failed to create an observable", err)
 	}

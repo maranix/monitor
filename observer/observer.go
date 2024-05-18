@@ -1,4 +1,4 @@
-package observe
+package observer
 
 import (
 	"fmt"
@@ -12,9 +12,9 @@ import (
 )
 
 type Observer struct {
-	watcher        *fsnotify.Watcher
-	observablePath string
-	command        string
+	watcher    *fsnotify.Watcher
+	observable string
+	command    string
 }
 
 func Create(p string, c string) (*Observer, error) {
@@ -29,9 +29,9 @@ func Create(p string, c string) (*Observer, error) {
 	}
 
 	obs := &Observer{
-		watcher:        watcher,
-		observablePath: path,
-		command:        c,
+		watcher:    watcher,
+		observable: path,
+		command:    c,
 	}
 
 	return obs, nil
@@ -39,7 +39,7 @@ func Create(p string, c string) (*Observer, error) {
 
 func (obs *Observer) Observe() {
 	slog.Info("Starting observer")
-	dir, err := fsutil.IsDirectory(obs.observablePath)
+	dir, err := fsutil.IsDirectory(obs.observable)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
@@ -48,7 +48,7 @@ func (obs *Observer) Observe() {
 	if dir {
 		obs.watchDirEvents()
 	} else {
-		files := []string{obs.observablePath}
+		files := []string{obs.observable}
 		obs.watchFileEvents(files)
 	}
 }
@@ -62,7 +62,7 @@ func (obs *Observer) add(p string) {
 }
 
 func (obs *Observer) watchDirEvents() {
-	subdirs, err := fsutil.GetSubDirPaths(obs.observablePath)
+	subdirs, err := fsutil.GetSubDirPaths(obs.observable)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
