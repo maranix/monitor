@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/maranix/monitor/fsutil"
@@ -77,17 +78,26 @@ func (obs *Observer) watchDirEvents() {
 	defer obs.watcher.Close()
 	// Start listening for events.
 	go func() {
+		var timer *time.Timer
+
 		for {
 			select {
 			case event, ok := <-obs.watcher.Events:
-				if !ok {
-					return
+				if timer != nil {
+					timer.Stop()
 				}
 
-				slog.Info(fmt.Sprintf("event: %q, modified :%q", event, event.Name))
-				slog.Info(fmt.Sprintf("executing command %s", obs.command))
+				if !ok || event.Op == fsnotify.Chmod {
+					continue
+				}
 
-				runner.Run(obs.command)
+				timer = time.AfterFunc(time.Second*1, func() {
+					slog.Info(fmt.Sprintf("event: %q, modified :%q", event, event.Name))
+					slog.Info(fmt.Sprintf("executing command %s", obs.command))
+
+					runner.Run(obs.command)
+				})
+
 			case err, ok := <-obs.watcher.Errors:
 				if !ok {
 					slog.Error("error:", err)
