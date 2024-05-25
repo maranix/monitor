@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/maranix/monitor/assets/59292838/4d8598f2-a345-4ab3-b533-e07a1d3e9610" alt="Monitor Logo"/>
+    <img src="https://github.com/maranix/monitor/assets/59292838/4d8598f2-a345-4ab3-b533-e07a1d3e9610" alt="Monitor Logo" width="300" height="300"/>
 </p>
 
 <h1 align="center">Monitor</h1>
