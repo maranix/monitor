@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Monitor</h1>
-Monitor is a CLI tool for reloading commands/services on filesystem changes using GoLang. It leverages the `cobra` and `fsnotify` packages to watch for changes in a specified directory and execute a command when changes are detected.
+Monitor is a CLI tool for reloading commands/services on filesystem changes. It leverages the `fsnotify` package to watch for changes in a specified directory and executes command when changes are detected.
 
 > [!WARNING]
 > ### Project Status
