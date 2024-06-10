@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"log/slog"
-	"os"
 
 	"github.com/maranix/monitor/observer"
 	"github.com/spf13/cobra"
@@ -44,12 +43,10 @@ func addFlags() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "output additional information")
 }
 
-func Execute() {
+func Execute() error {
 	addCommands()
 	addFlags()
 
-	if err := rootCmd.Execute(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
-	}
+	err := rootCmd.Execute()
+	return err
 }
