@@ -7,23 +7,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const ReleaseVersion = "0.0.1-alpha"
+func init() {
+	rootCmd.AddCommand(versionCmd)
+}
 
-var verbose bool
 var rootCmd = &cobra.Command{
 	Use:   "monitor",
 	Short: "Monitor restart command/service on filesystem changes effortlessly",
 	Long: `Monitor is a cli-tool built for development workflows where changes 
 in configuration files or code requires restarting a service.`,
 	Args: cobra.MinimumNArgs(2),
-	Run:  handleRun,
+	Run:  handleRoot,
 }
 
-func handleRun(cmd *cobra.Command, args []string) {
-	if !verbose {
-		slog.SetLogLoggerLevel(slog.LevelError)
-	}
-
+func handleRoot(cmd *cobra.Command, args []string) {
 	pathArg := args[0]
 	cmdArg := args[1]
 
@@ -33,20 +30,4 @@ func handleRun(cmd *cobra.Command, args []string) {
 	}
 
 	obs.Observe()
-}
-
-func addCommands() {
-	rootCmd.AddCommand(versionCmd)
-}
-
-func addFlags() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "output additional information")
-}
-
-func Execute() error {
-	addCommands()
-	addFlags()
-
-	err := rootCmd.Execute()
-	return err
 }
