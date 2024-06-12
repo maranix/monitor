@@ -15,6 +15,6 @@ var versionCmd = &cobra.Command{
 	Run:   handleVersionRun,
 }
 
-func handleVersionRun(cmd *cobra.Command, args []string) {
+func handleVersionRun(cmd *cobra.Command, _ []string) {
 	fmt.Println(releaseVersion)
 }
