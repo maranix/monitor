@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"os"
 
@@ -9,10 +8,7 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	if err := cli.ExecuteWithContext(ctx); err != nil {
+	if err := cli.Execute(); err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
