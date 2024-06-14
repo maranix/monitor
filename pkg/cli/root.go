@@ -1,12 +1,20 @@
-package cmd
+package cli
 
 import (
 	"github.com/spf13/cobra"
 )
 
+var rootCmd = &cobra.Command{
+	Use:   "mon",
+	Short: "Monitor restart command/service on filesystem changes effortlessly",
+	Long: `Monitor is a cli-tool built for development workflows where changes 
+in configuration files or code requires restarting a service.`,
+	Example: "mon ./ \"echo hello\"",
+	Run:     handleRootRun,
+}
+
 var (
 	// Debounce duration in seconds
-	//
 	// Duration to wait before re-executing the command on detecting
 	// subsequent changes in a short succession.
 	//
@@ -53,15 +61,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&run, "run", "r", "", "List services/commands to run and reload on changes.")
 
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging for debugging purposes.")
-}
-
-var rootCmd = &cobra.Command{
-	Use:   "mon",
-	Short: "Monitor restart command/service on filesystem changes effortlessly",
-	Long: `Monitor is a cli-tool built for development workflows where changes 
-in configuration files or code requires restarting a service.`,
-	Example: "mon ./ \"echo hello\"",
-	Run:     handleRootRun,
 }
 
 func handleRootRun(cmd *cobra.Command, args []string) {

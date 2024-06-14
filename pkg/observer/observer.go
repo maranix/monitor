@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/maranix/monitor/fsutil"
-	"github.com/maranix/monitor/runner"
+	"github.com/maranix/monitor/pkg/fsutil"
+	"github.com/maranix/monitor/pkg/runner"
 )
 
 type Observer struct {

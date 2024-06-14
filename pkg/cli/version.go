@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -6,12 +6,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const releaseVersion = "pre_release-dev"
+const releaseVersion = "pre-alpha"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "version number",
 	Long:  `Prints the version number of Monitor CLI`,
+	Args:  cobra.MaximumNArgs(0),
 	Run:   handleVersionRun,
 }
 
