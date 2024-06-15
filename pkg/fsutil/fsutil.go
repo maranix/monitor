@@ -1,6 +1,7 @@
 package fsutil
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -57,5 +58,29 @@ func GetParentDir(p string) string {
 
 func GetFileFromPath(p string) string {
 	return filepath.Base(p)
+}
 
+func IsValidPath(path string) error {
+	if path == "" {
+		return errors.New("**Invalid Target:**\nThe provided target path must be a valid file or directory.")
+	}
+
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.New("**Invalid Target:**\nThe provided path does not exist.")
+		}
+
+		if os.IsPermission(err) {
+			return errors.New("**Permission Denied:**\nCould not access the provided path.")
+		}
+
+		return errors.New("**Validation Error:**\nAn unknown error occurred while validating the target.")
+	}
+
+	if !fileInfo.IsDir() || !fileInfo.Mode().IsRegular() {
+		return errors.New("")
+	}
+
+	return nil
 }

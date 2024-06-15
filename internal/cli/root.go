@@ -1,6 +1,10 @@
 package cli
 
 import (
+	"errors"
+	"os"
+
+	"github.com/maranix/monitor/pkg/fsutil"
 	"github.com/spf13/cobra"
 )
 
@@ -64,11 +68,10 @@ func init() {
 }
 
 func handleRootRun(cmd *cobra.Command, args []string) {
-	// TODO: Validate and replace vars if needed and then pass necessary
-	//       vars to observer module.
-	//
-	// Failure: In-case of failure log the reason of failure and exit
-	//
+	err := validateArgs(args)
+	if err != nil {
+		os.Exit(1)
+	}
 
 	// pathArg := args[0]
 	// cmdArg := args[1]
@@ -79,4 +82,34 @@ func handleRootRun(cmd *cobra.Command, args []string) {
 	// }
 	//
 	// obs.Observe()
+}
+
+func validateArgs(args []string) error {
+	// Positional parameters takes precedence over flags in case of target and run
+	//
+	// t = target, r = run
+	t, r := args[0], args[1]
+
+	if t == "" && target == "" {
+		return errors.New("**Missing Target:**\nPlease specify a target to monitor using the `--target` (or `-t`) flag. See the help documentation for details.")
+	}
+
+	if r == "" && run == "" {
+		return errors.New("**Missing Runner Target:**\nPlease specify a runner target to monitor using the `--run` (or `-r`) flag. See the help documentation for details.")
+	}
+
+	if t != "" {
+		target = t
+	}
+
+	if r != "" {
+		run = r
+	}
+
+	err := fsutil.IsValidPath(target)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
