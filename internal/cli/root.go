@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/maranix/monitor/pkg/fsutil"
+	"github.com/maranix/monitor/pkg/runner"
 	"github.com/spf13/cobra"
 )
 
@@ -105,7 +106,12 @@ func validateArgs(args []string) error {
 		run = r
 	}
 
-	err := fsutil.ValidatePath(target)
+	err := fsutil.Validate(target)
+	if err != nil {
+		return err
+	}
+
+	err = runner.Validate(run)
 	if err != nil {
 		return err
 	}

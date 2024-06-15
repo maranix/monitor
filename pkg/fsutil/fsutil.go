@@ -60,22 +60,14 @@ func GetFileFromPath(p string) string {
 	return filepath.Base(p)
 }
 
-func ValidatePath(path string) error {
+func Validate(path string) error {
 	if path == "" {
 		return errors.New("**Invalid Target:**\nThe provided target path must be a valid file or directory.")
 	}
 
-	fileInfo, err := os.Stat(path)
+	fileInfo, err := IsPathValidAndAccessible(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return errors.New("**Invalid Target:**\nThe provided path does not exist.")
-		}
-
-		if os.IsPermission(err) {
-			return errors.New("**Permission Denied:**\nCould not access the provided path.")
-		}
-
-		return errors.New("**Validation Error:**\nAn unknown error occurred while validating the target.")
+		return err
 	}
 
 	if !fileInfo.IsDir() || !fileInfo.Mode().IsRegular() {
@@ -83,4 +75,21 @@ func ValidatePath(path string) error {
 	}
 
 	return nil
+}
+
+func IsPathValidAndAccessible(path string) (os.FileInfo, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errors.New("**Invalid Target:**\nThe provided path does not exist.")
+		}
+
+		if os.IsPermission(err) {
+			return nil, errors.New("**Permission Denied:**\nCould not access the provided path.")
+		}
+
+		return nil, errors.New("**Validation Error:**\nAn unknown error occurred while validating the target.")
+	}
+
+	return fileInfo, nil
 }
