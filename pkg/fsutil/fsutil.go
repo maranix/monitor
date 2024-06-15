@@ -60,7 +60,7 @@ func GetFileFromPath(p string) string {
 	return filepath.Base(p)
 }
 
-func IsValidPath(path string) error {
+func ValidatePath(path string) error {
 	if path == "" {
 		return errors.New("**Invalid Target:**\nThe provided target path must be a valid file or directory.")
 	}

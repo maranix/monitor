@@ -9,10 +9,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "mon",
-	Short: "Monitor restart command/service on filesystem changes effortlessly",
-	Long: `Monitor is a cli-tool built for development workflows where changes 
-in configuration files or code requires restarting a service.`,
+	Use:     "mon",
+	Short:   "Monitor restart command/service on filesystem changes effortlessly",
+	Long:    `Monitor is a cli-tool built for development workflows where changes in configuration files or code requires restarting a service.`,
 	Example: "mon ./ \"echo hello\"",
 	Run:     handleRootRun,
 }
@@ -106,7 +105,7 @@ func validateArgs(args []string) error {
 		run = r
 	}
 
-	err := fsutil.IsValidPath(target)
+	err := fsutil.ValidatePath(target)
 	if err != nil {
 		return err
 	}
