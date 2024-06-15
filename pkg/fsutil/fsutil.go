@@ -79,7 +79,7 @@ func IsValidPath(path string) error {
 	}
 
 	if !fileInfo.IsDir() || !fileInfo.Mode().IsRegular() {
-		return errors.New("")
+		return errors.New("**Invalid Target:**\nExpected the target to be either a directory or file.")
 	}
 
 	return nil
