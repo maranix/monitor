@@ -73,9 +73,9 @@ func handleRootRun(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// pathArg := args[0]
-	// cmdArg := args[1]
-	//
+	// cfg := newConfig()
+	// TODO: Use cfg struct to create a observer and a runner
+
 	// obs, err := observer.Create(pathArg, cmdArg)
 	// if err != nil {
 	// 	slog.Error("Failed to create an observable", err)
