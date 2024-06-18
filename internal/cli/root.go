@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/maranix/monitor/pkg/fsutil"
@@ -70,6 +71,7 @@ func init() {
 func handleRootRun(cmd *cobra.Command, args []string) {
 	err := validateArgs(args)
 	if err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
@@ -90,20 +92,26 @@ func validateArgs(args []string) error {
 	// t = target, r = run
 	t, r := args[0], args[1]
 
+	err := resolveAndValidateTarget(t)
+	if err != nil {
+		return err
+	}
+
+	err = resolveAndValidateRunner(r)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resolveAndValidateTarget(t string) error {
 	if t == "" && target == "" {
 		return errors.New("**Missing Target:**\nPlease specify a target to monitor using the `--target` (or `-t`) flag. See the help documentation for details.")
 	}
 
-	if r == "" && run == "" {
-		return errors.New("**Missing Runner Target:**\nPlease specify a runner target to monitor using the `--run` (or `-r`) flag. See the help documentation for details.")
-	}
-
 	if t != "" {
 		target = t
-	}
-
-	if r != "" {
-		run = r
 	}
 
 	err := fsutil.Validate(target)
@@ -111,7 +119,24 @@ func validateArgs(args []string) error {
 		return err
 	}
 
-	err = runner.Validate(run)
+	target, err = fsutil.AbsPath(target)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resolveAndValidateRunner(r string) error {
+	if r == "" && run == "" {
+		return errors.New("**Missing Runner Target:**\nPlease specify a runner target to monitor using the `--run` (or `-r`) flag. See the help documentation for details.")
+	}
+
+	if r != "" {
+		run = r
+	}
+
+	err := runner.Validate(run)
 	if err != nil {
 		return err
 	}

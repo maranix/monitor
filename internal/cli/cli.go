@@ -33,7 +33,8 @@ type Config struct {
 	verbose bool
 }
 
-func newConfig() *Config {
+// Creates a new Config based on Global Flag vars.
+func createConfig() *Config {
 	cfg := Config{
 		debounce: debounce,
 		ignore:   ignore,
