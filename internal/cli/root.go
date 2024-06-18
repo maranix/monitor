@@ -10,12 +10,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = &cobra.Command{
-	Use:     "mon",
-	Short:   "Monitor restart command/service on filesystem changes effortlessly",
-	Long:    `Monitor is a cli-tool built for development workflows where changes in configuration files or code requires restarting a service.`,
-	Example: "mon ./ \"echo hello\"",
-	Run:     handleRootRun,
+type Config struct {
+	// Debounce duration in seconds
+	// Duration to wait before re-executing the command on detecting
+	// subsequent changes in a short succession.
+	//
+	// Defaults to 300ms.
+	debounce float32
+
+	// A slice of glob patterns or path to dirs/files
+	//
+	// Cannot be a combination of two, keep it as simple as it can be.
+	//
+	// Defaults to an empty slice.
+	ignore []string
+
+	// Command/Service to run
+	//
+	// Default to an empty string.
+	run string
+
+	// Path to the target to watch
+	//
+	// Can be either a directory or a file
+	//
+	// Default to an empty string.
+	target string
+
+	// Verbose logging for debugging
+	//
+	// Default to false.
+	verbose bool
 }
 
 var (
@@ -51,6 +76,14 @@ var (
 	verbose bool
 )
 
+var rootCmd = &cobra.Command{
+	Use:     "mon",
+	Short:   "Monitor restart command/service on filesystem changes effortlessly",
+	Long:    `Monitor is a cli-tool built for development workflows where changes in configuration files or code requires restarting a service.`,
+	Example: "mon ./ \"echo hello\"",
+	Run:     handleRootRun,
+}
+
 func init() {
 	rootCmd.AddCommand(versionCmd)
 
@@ -68,6 +101,19 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging for debugging purposes.")
 }
 
+// Creates a new Config based on Global Flag vars.
+func createConfig() *Config {
+	cfg := Config{
+		debounce: debounce,
+		ignore:   ignore,
+		run:      run,
+		target:   target,
+		verbose:  verbose,
+	}
+
+	return &cfg
+}
+
 func handleRootRun(cmd *cobra.Command, args []string) {
 	err := validateArgs(args)
 	if err != nil {
@@ -75,7 +121,7 @@ func handleRootRun(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// cfg := newConfig()
+	// cfg := createConfig()
 	// TODO: Use cfg struct to create a observer and a runner
 
 	// obs, err := observer.Create(pathArg, cmdArg)
