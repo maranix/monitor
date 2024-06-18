@@ -11,71 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type Config struct {
-	// Debounce duration in seconds
-	// Duration to wait before re-executing the command on detecting
-	// subsequent changes in a short succession.
-	//
-	// Defaults to 300ms.
-	debounce float32
-
-	// A slice of glob patterns or path to dirs/files
-	//
-	// Cannot be a combination of two, keep it as simple as it can be.
-	//
-	// Defaults to an empty slice.
-	ignore []string
-
-	// Command/Service to run
-	//
-	// Default to an empty string.
-	run string
-
-	// Path to the target to watch
-	//
-	// Can be either a directory or a file
-	//
-	// Default to an empty string.
-	target string
-
-	// Verbose logging for debugging
-	//
-	// Default to false.
-	verbose bool
-}
-
-var (
-	// Debounce duration in seconds
-	// Duration to wait before re-executing the command on detecting
-	// subsequent changes in a short succession.
-	//
-	// Defaults to 300ms.
-	debounce float32
-
-	// A slice of glob patterns or path to dirs/files
-	//
-	// Cannot be a combination of two, keep it as simple as it can be.
-	//
-	// Defaults to an empty slice.
-	ignore []string
-
-	// Command/Service to run
-	//
-	// Default to an empty string.
-	run string
-
-	// Path to the target to watch
-	//
-	// Can be either a directory or a file
-	//
-	// Default to an empty string.
-	target string
-
-	// Verbose logging for debugging
-	//
-	// Default to false.
-	verbose bool
-)
+var cfg Config
 
 var rootCmd = &cobra.Command{
 	Use:     "mon",
@@ -86,33 +22,22 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	cfg := createConfig()
+
 	rootCmd.AddCommand(versionCmd)
 
 	/*
 	 *  Global Flags
 	 */
-	rootCmd.PersistentFlags().Float32VarP(&debounce, "debounce", "d", 0.3, "Exclude files/directories matching the provided glob pattern.")
+	rootCmd.PersistentFlags().Float32VarP(&cfg.debounce, "debounce", "d", 0.3, "Exclude files/directories matching the provided glob pattern.")
 
-	rootCmd.PersistentFlags().StringSliceVarP(&ignore, "ignore", "i", []string{}, "Exclude files/directories matching the provided glob pattern.")
+	rootCmd.PersistentFlags().StringSliceVarP(&cfg.ignore, "ignore", "i", []string{}, "Exclude files/directories matching the provided glob pattern.")
 
-	rootCmd.PersistentFlags().StringVarP(&target, "target", "t", "./", "Specify the absolute path of the target directory or file.")
+	rootCmd.PersistentFlags().StringVarP(&cfg.target, "target", "t", "./", "Specify the absolute path of the target directory or file.")
 
-	rootCmd.PersistentFlags().StringVarP(&run, "run", "r", "", "List services/commands to run and reload on changes.")
+	rootCmd.PersistentFlags().StringVarP(&cfg.run, "run", "r", "", "List services/commands to run and reload on changes.")
 
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging for debugging purposes.")
-}
-
-// Creates a new Config based on Global Flag vars.
-func createConfig() *Config {
-	cfg := Config{
-		debounce: debounce,
-		ignore:   ignore,
-		run:      run,
-		target:   target,
-		verbose:  verbose,
-	}
-
-	return &cfg
+	rootCmd.PersistentFlags().BoolVarP(&cfg.verbose, "verbose", "v", false, "Enable verbose logging for debugging purposes.")
 }
 
 func handleRootRun(cmd *cobra.Command, args []string) {
@@ -122,8 +47,7 @@ func handleRootRun(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	cfg := createConfig()
-	obs, err := observer.NewObserver(cfg)
+	obs, err := observer.NewObserver(&cfg)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -135,14 +59,14 @@ func validateArgs(args []string) error {
 	// Positional parameters takes precedence over flags in case of target and run
 	//
 	// t = target, r = run
-	t, r := args[0], args[1]
+	tPos, rPos := args[0], args[1]
 
-	err := resolveAndValidateTarget(t)
+	err := resolveAndValidateTarget(cfg.target, tPos)
 	if err != nil {
 		return err
 	}
 
-	err = resolveAndValidateRunner(r)
+	err = resolveAndValidateRunner(cfg.run, rPos)
 	if err != nil {
 		return err
 	}
@@ -150,21 +74,21 @@ func validateArgs(args []string) error {
 	return nil
 }
 
-func resolveAndValidateTarget(t string) error {
-	if t == "" && target == "" {
+func resolveAndValidateTarget(def string, pos string) error {
+	if def == "" && pos == "" {
 		return errors.New("**Missing Target:**\nPlease specify a target to monitor using the `--target` (or `-t`) flag. See the help documentation for details.")
 	}
 
-	if t != "" {
-		target = t
+	if pos != "" {
+		cfg.target = pos
 	}
 
-	err := fsutil.Validate(target)
+	err := fsutil.Validate(cfg.target)
 	if err != nil {
 		return err
 	}
 
-	target, err = fsutil.AbsPath(target)
+	cfg.target, err = fsutil.AbsPath(cfg.target)
 	if err != nil {
 		return err
 	}
@@ -172,39 +96,19 @@ func resolveAndValidateTarget(t string) error {
 	return nil
 }
 
-func resolveAndValidateRunner(r string) error {
-	if r == "" && run == "" {
+func resolveAndValidateRunner(def string, pos string) error {
+	if def == "" && pos == "" {
 		return errors.New("**Missing Runner Target:**\nPlease specify a runner target to monitor using the `--run` (or `-r`) flag. See the help documentation for details.")
 	}
 
-	if r != "" {
-		run = r
+	if pos != "" {
+		cfg.run = pos
 	}
 
-	err := runner.Validate(run)
+	err := runner.Validate(cfg.run)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (c *Config) GetDebounce() float32 {
-	return c.debounce
-}
-
-func (c *Config) GetIgnoreTarget() []string {
-	return c.ignore
-}
-
-func (c *Config) GetRunner() string {
-	return c.run
-}
-
-func (c *Config) GetTarget() string {
-	return c.target
-}
-
-func (c *Config) GetVerbose() bool {
-	return c.verbose
 }
