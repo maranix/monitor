@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/maranix/monitor/pkg/fsutil"
+	"github.com/maranix/monitor/pkg/observer"
 	"github.com/maranix/monitor/pkg/runner"
 	"github.com/spf13/cobra"
 )
@@ -121,15 +122,13 @@ func handleRootRun(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// cfg := createConfig()
-	// TODO: Use cfg struct to create a observer and a runner
+	cfg := createConfig()
+	obs, err := observer.NewObserver(cfg)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	// obs, err := observer.Create(pathArg, cmdArg)
-	// if err != nil {
-	// 	slog.Error("Failed to create an observable", err)
-	// }
-	//
-	// obs.Observe()
+	obs.Observe()
 }
 
 func validateArgs(args []string) error {
@@ -188,4 +187,24 @@ func resolveAndValidateRunner(r string) error {
 	}
 
 	return nil
+}
+
+func (c *Config) GetDebounce() float32 {
+	return c.debounce
+}
+
+func (c *Config) GetIgnoreTarget() []string {
+	return c.ignore
+}
+
+func (c *Config) GetRunner() string {
+	return c.run
+}
+
+func (c *Config) GetTarget() string {
+	return c.target
+}
+
+func (c *Config) GetVerbose() bool {
+	return c.verbose
 }
