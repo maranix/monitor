@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfg Config
+var cfg *Config
 
 var rootCmd = &cobra.Command{
 	Use:     "mon",
@@ -22,14 +22,14 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	cfg := createConfig()
+	cfg = createConfig()
 
 	rootCmd.AddCommand(versionCmd)
 
 	/*
 	 *  Global Flags
 	 */
-	rootCmd.PersistentFlags().Float32VarP(&cfg.debounce, "debounce", "d", 0.3, "Exclude files/directories matching the provided glob pattern.")
+	rootCmd.PersistentFlags().Float32VarP(&cfg.debounce, "debounce", "d", 0.3, "Time to wait in-Seconds between events before restarting the runner")
 
 	rootCmd.PersistentFlags().StringSliceVarP(&cfg.ignore, "ignore", "i", []string{}, "Exclude files/directories matching the provided glob pattern.")
 
@@ -43,11 +43,12 @@ func init() {
 func handleRootRun(cmd *cobra.Command, args []string) {
 	err := validateArgs(args)
 	if err != nil {
-		fmt.Println(err.Error())
+		cmd.Help()
+		fmt.Println(fmt.Sprintf("\n%s", err.Error()))
 		os.Exit(1)
 	}
 
-	obs, err := observer.NewObserver(&cfg)
+	obs, err := observer.NewObserver(cfg)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -56,17 +57,48 @@ func handleRootRun(cmd *cobra.Command, args []string) {
 }
 
 func validateArgs(args []string) error {
+	argsCount := len(args)
+
+	if argsCount > 0 && argsCount != 2 {
+		return errors.New("**Invalid Args:**\n\nExpected to receive exactly 2 positional args.")
+	}
+
 	// Positional parameters takes precedence over flags in case of target and run
+	// are provided via positonal parameters
 	//
 	// t = target, r = run
-	tPos, rPos := args[0], args[1]
-
-	err := resolveAndValidateTarget(cfg.target, tPos)
-	if err != nil {
-		return err
+	if argsCount > 0 {
+		cfg.target = args[0]
+		cfg.run = args[1]
 	}
 
-	err = resolveAndValidateRunner(cfg.run, rPos)
+	// Seems much more cleaner, intuitive and easier to read than
+	//  ```go
+	//  err := validateTarget(someTarget)
+	//  if err != nil {
+	//      return err
+	//  }
+	//
+	//  err = validateRunner(someRunner)
+	//  if err != nil {
+	//      return err
+	//  }
+	//
+	//  return nil
+	//  ```
+	var err error
+	err = validateTarget(cfg.target)
+	err = validateRunner(cfg.run)
+
+	return err
+}
+
+func validateTarget(target string) error {
+	if target == "" {
+		return errors.New("**Missing Target:**\n\nPlease specify a target to monitor using the `--target` (or `-t`) flag.")
+	}
+
+	err := fsutil.Validate(target)
 	if err != nil {
 		return err
 	}
@@ -74,38 +106,12 @@ func validateArgs(args []string) error {
 	return nil
 }
 
-func resolveAndValidateTarget(def string, pos string) error {
-	if def == "" && pos == "" {
-		return errors.New("**Missing Target:**\nPlease specify a target to monitor using the `--target` (or `-t`) flag. See the help documentation for details.")
+func validateRunner(run string) error {
+	if run == "" {
+		return errors.New("**Missing Runner:**\n\nPlease specify a runner to execute using the `--run` (or `-r`) flag.")
 	}
 
-	if pos != "" {
-		cfg.target = pos
-	}
-
-	err := fsutil.Validate(cfg.target)
-	if err != nil {
-		return err
-	}
-
-	cfg.target, err = fsutil.AbsPath(cfg.target)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func resolveAndValidateRunner(def string, pos string) error {
-	if def == "" && pos == "" {
-		return errors.New("**Missing Runner Target:**\nPlease specify a runner target to monitor using the `--run` (or `-r`) flag. See the help documentation for details.")
-	}
-
-	if pos != "" {
-		cfg.run = pos
-	}
-
-	err := runner.Validate(cfg.run)
+	err := runner.Validate(run)
 	if err != nil {
 		return err
 	}
