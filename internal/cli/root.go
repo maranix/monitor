@@ -18,7 +18,17 @@ var rootCmd = &cobra.Command{
 	Short:   "Monitor restart command/service on filesystem changes effortlessly",
 	Long:    `Monitor is a cli-tool built for development workflows where changes in configuration files or code requires restarting a service.`,
 	Example: "mon ./ \"echo hello\"",
-	Run:     handleRootRun,
+	Run: func(cmd *cobra.Command, args []string) {
+		obs, err := handleRootRun(args)
+		if err != nil {
+			cmd.Help()
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		obs.Observe()
+	},
+	Args: cobra.RangeArgs(0, 2),
 }
 
 func init() {
@@ -33,37 +43,45 @@ func init() {
 
 	rootCmd.PersistentFlags().StringSliceVarP(&cfg.ignore, "ignore", "i", []string{}, "Exclude files/directories matching the provided glob pattern.")
 
-	rootCmd.PersistentFlags().StringVarP(&cfg.target, "target", "t", "./", "Specify the absolute path of the target directory or file.")
+	rootCmd.PersistentFlags().StringVarP(&cfg.target, "target", "t", "", "Path of the target directory or file to monitor.")
 
-	rootCmd.PersistentFlags().StringVarP(&cfg.run, "run", "r", "", "List services/commands to run and reload on changes.")
+	rootCmd.PersistentFlags().StringVarP(&cfg.run, "run", "r", "", "service to run and re-run on filesytem changes.")
 
 	rootCmd.PersistentFlags().BoolVarP(&cfg.verbose, "verbose", "v", false, "Enable verbose logging for debugging purposes.")
 }
 
-func handleRootRun(cmd *cobra.Command, args []string) {
-	err := validateArgs(args)
-	if err != nil {
-		cmd.Help()
-		fmt.Println(fmt.Sprintf("\n%s", err.Error()))
-		os.Exit(1)
+func handleRootRun(args []string) (*observer.Observer, error) {
+	if err := validateArgs(args); err != nil {
+		return nil, formatError(err)
+	}
+
+	if err := resolveAbsTargetPath(cfg.target); err != nil {
+		return nil, formatError(err)
+	}
+
+	if err := validateTarget(cfg.target); err != nil {
+		return nil, formatError(err)
+	}
+
+	if err := validateRunner(cfg.run); err != nil {
+		return nil, formatError(err)
 	}
 
 	obs, err := observer.NewObserver(cfg)
 	if err != nil {
-		fmt.Println(err.Error())
+		return nil, formatError(err)
 	}
 
-	obs.Observe()
+	return obs, nil
 }
 
 func validateArgs(args []string) error {
 	argsCount := len(args)
-
 	if argsCount > 0 && argsCount != 2 {
 		return errors.New("**Invalid Args:**\n\nExpected to receive exactly 2 positional args.")
 	}
 
-	// Positional parameters takes precedence over flags in case of target and run
+	// Positional parameters take precedence over flags in case of target and run
 	// are provided via positonal parameters
 	//
 	// t = target, r = run
@@ -72,25 +90,7 @@ func validateArgs(args []string) error {
 		cfg.run = args[1]
 	}
 
-	// Seems much more cleaner, intuitive and easier to read than
-	//  ```go
-	//  err := validateTarget(someTarget)
-	//  if err != nil {
-	//      return err
-	//  }
-	//
-	//  err = validateRunner(someRunner)
-	//  if err != nil {
-	//      return err
-	//  }
-	//
-	//  return nil
-	//  ```
-	var err error
-	err = validateTarget(cfg.target)
-	err = validateRunner(cfg.run)
-
-	return err
+	return nil
 }
 
 func validateTarget(target string) error {
@@ -117,4 +117,19 @@ func validateRunner(run string) error {
 	}
 
 	return nil
+}
+
+func resolveAbsTargetPath(path string) error {
+	absPath, err := fsutil.AbsPath(path)
+	if err != nil {
+		return err
+	}
+
+	cfg.target = absPath
+	return nil
+}
+
+func formatError(err error) error {
+	msg := fmt.Sprintf("\n%s", err.Error())
+	return errors.New(msg)
 }

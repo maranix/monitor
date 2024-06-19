@@ -70,7 +70,8 @@ func Validate(path string) error {
 		return err
 	}
 
-	if !fileInfo.IsDir() || !fileInfo.Mode().IsRegular() {
+	// Throw if the target path is neither a file or a directory
+	if !fileInfo.IsDir() && !fileInfo.Mode().IsRegular() {
 		return errors.New("**Invalid Target:**\nExpected the target to be either a directory or file.")
 	}
 
