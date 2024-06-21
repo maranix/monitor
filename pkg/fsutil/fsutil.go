@@ -17,7 +17,7 @@ func AbsPath(p string) (string, error) {
 }
 
 func IsDirectory(p string) (bool, error) {
-	stat, err := os.Stat(p)
+	stat, err := os.Lstat(p)
 	if err != nil {
 		return false, err
 	}

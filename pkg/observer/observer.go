@@ -24,7 +24,34 @@ func NewObserver(cfg config.Config) (*Observer, error) {
 }
 
 func (obs *Observer) Observe() {
-	// TODO: Implement Observe
+	errChan := make(chan error)
+	notifChan := make(chan bool)
+
+	go obs.eventListener(notifChan, errChan)
+
+	for {
+		select {
+		case shouldRestart, ok := <-notifChan:
+			if !ok {
+				// Channel was closed
+				return
+			}
+
+			if !shouldRestart {
+				continue
+			}
+
+			fmt.Println("File changed")
+		case msg, ok := <-errChan:
+			if !ok {
+				// Channel was closed
+				return
+			}
+
+			fmt.Println(msg.Error())
+		}
+	}
+
 }
 
 func (obs *Observer) Close() error {
@@ -43,6 +70,40 @@ func new(cfg config.Config) (*Observer, error) {
 	}
 
 	return &obs, nil
+}
+
+func (obs *Observer) eventListener(notifChan chan bool, errChan chan error) {
+	for {
+		select {
+		case event, ok := <-obs.watcher.Events:
+			if !ok {
+				// Channel was closed (Watcher.Close() was called).
+				//
+				// Close the listener channels
+				close(notifChan)
+				close(errChan)
+				return
+			}
+
+			if event.Op == fsnotify.Chmod {
+				notifChan <- false
+			}
+
+			notifChan <- true
+		case err, ok := <-obs.watcher.Errors:
+			fmt.Println(err.Error())
+			if !ok {
+				// Channel was closed (Watcher.Close() was called).
+				//
+				// Close the listener channels
+				close(notifChan)
+				close(errChan)
+				return
+			}
+
+			errChan <- err
+		}
+	}
 }
 
 func (obs *Observer) close() error {
