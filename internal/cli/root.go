@@ -25,6 +25,7 @@ var rootCmd = &cobra.Command{
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
+		defer obs.Close()
 
 		obs.Observe()
 	},

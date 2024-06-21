@@ -23,8 +23,12 @@ func NewObserver(cfg config.Config) (*Observer, error) {
 	return obs, nil
 }
 
-func (obs *Observer) Observe() error {
-	return nil
+func (obs *Observer) Observe() {
+	// TODO: Implement Observe
+}
+
+func (obs *Observer) Close() error {
+	return obs.close()
 }
 
 func new(cfg config.Config) (*Observer, error) {
@@ -39,4 +43,13 @@ func new(cfg config.Config) (*Observer, error) {
 	}
 
 	return &obs, nil
+}
+
+func (obs *Observer) close() error {
+	err := obs.watcher.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
