@@ -10,7 +10,7 @@ import (
 
 type Observer struct {
 	watcher *fsnotify.Watcher
-	cfg     config.Config
+	config  config.Config
 }
 
 func NewObserver(cfg config.Config) (*Observer, error) {
@@ -66,7 +66,7 @@ func new(cfg config.Config) (*Observer, error) {
 
 	obs := Observer{
 		watcher: watcher,
-		cfg:     cfg,
+		config:  cfg,
 	}
 
 	return &obs, nil
