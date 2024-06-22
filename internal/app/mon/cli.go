@@ -1,4 +1,4 @@
-package cli
+package mon
 
 type Config struct {
 	// Debounce duration in seconds

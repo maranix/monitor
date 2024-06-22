@@ -1,4 +1,4 @@
-package cli
+package mon
 
 import (
 	"errors"
@@ -18,18 +18,26 @@ var rootCmd = &cobra.Command{
 	Short:   "Monitor restart command/service on filesystem changes effortlessly",
 	Long:    `Monitor is a cli-tool built for development workflows where changes in configuration files or code requires restarting a service.`,
 	Example: "mon ./ \"echo hello\"",
+	Args:    cobra.RangeArgs(0, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		obs, err := handleRootRun(args)
+		err := handleArgs(args)
 		if err != nil {
 			cmd.Help()
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
+
+		obs, err := observer.NewObserver(cfg)
+		if err != nil {
+			cmd.Help()
+			fmt.Println(formatError(err))
+			os.Exit(1)
+		}
+
 		defer obs.Close()
 
 		obs.Observe()
 	},
-	Args: cobra.RangeArgs(0, 2),
 }
 
 func init() {
@@ -51,29 +59,24 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&cfg.verbose, "verbose", "v", false, "Enable verbose logging for debugging purposes.")
 }
 
-func handleRootRun(args []string) (*observer.Observer, error) {
+func handleArgs(args []string) error {
 	if err := validateArgs(args); err != nil {
-		return nil, formatError(err)
+		return formatError(err)
 	}
 
 	if err := resolveAbsTargetPath(cfg.target); err != nil {
-		return nil, formatError(err)
+		return formatError(err)
 	}
 
 	if err := validateTarget(cfg.target); err != nil {
-		return nil, formatError(err)
+		return formatError(err)
 	}
 
 	if err := validateRunner(cfg.run); err != nil {
-		return nil, formatError(err)
+		return formatError(err)
 	}
 
-	obs, err := observer.NewObserver(cfg)
-	if err != nil {
-		return nil, formatError(err)
-	}
-
-	return obs, nil
+	return nil
 }
 
 func validateArgs(args []string) error {

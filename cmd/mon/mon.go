@@ -1,15 +1,15 @@
 package main
 
 import (
-	"log/slog"
+	"fmt"
 	"os"
 
-	"github.com/maranix/monitor/internal/cli"
+	"github.com/maranix/monitor/internal/app/mon"
 )
 
 func main() {
-	if err := cli.Execute(); err != nil {
-		slog.Error(err.Error())
+	if err := mon.Execute(); err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
