@@ -87,9 +87,10 @@ func (obs *Observer) eventListener(notifChan chan bool, errChan chan error) {
 
 			if event.Op == fsnotify.Chmod {
 				notifChan <- false
+			} else {
+				notifChan <- true
 			}
 
-			notifChan <- true
 		case err, ok := <-obs.watcher.Errors:
 			fmt.Println(err.Error())
 			if !ok {
