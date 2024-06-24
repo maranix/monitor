@@ -2,7 +2,6 @@ package fsutil
 
 import (
 	"errors"
-	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -29,37 +28,6 @@ func IsDirectory(p string) (bool, error) {
 	return false, nil
 }
 
-func GetSubDirPaths(p string) ([]string, error) {
-	subdirs := make([]string, 0)
-
-	err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		_, err = IsDirectory(path)
-		if err != nil {
-			return err
-		}
-		subdirs = append(subdirs, path)
-
-		return nil
-	})
-	if err != nil {
-		return subdirs, err
-	}
-
-	return subdirs, nil
-}
-
-func GetParentDir(p string) string {
-	return filepath.Dir(p)
-}
-
-func GetFileFromPath(p string) string {
-	return filepath.Base(p)
-}
-
 func Validate(path string) error {
 	if path == "" {
 		return errors.New("**Invalid Target:**\nThe provided target path must be a valid file or directory.")
@@ -79,7 +47,7 @@ func Validate(path string) error {
 }
 
 func IsPathValidAndAccessible(path string) (os.FileInfo, error) {
-	fileInfo, err := os.Stat(path)
+	fileInfo, err := os.Lstat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, errors.New("**Invalid Target:**\nThe provided path does not exist.")

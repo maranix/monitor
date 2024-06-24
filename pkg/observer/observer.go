@@ -3,6 +3,7 @@ package observer
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/maranix/monitor/pkg/config"
@@ -24,10 +25,16 @@ func NewObserver(cfg config.Config) (*Observer, error) {
 }
 
 func (obs *Observer) Observe() {
-	errChan := make(chan error)
-	notifChan := make(chan bool)
+	watcher := obs.watcher
+	target := obs.config.GetTarget()
 
-	go obs.eventListener(notifChan, errChan)
+	notifChan := make(chan bool)
+	errChan := make(chan error)
+
+	go eventListener(watcher, notifChan, errChan)
+	if err := watchTarget(watcher, target, errChan); err != nil {
+		fmt.Println(err.Error())
+	}
 
 	for {
 		select {
@@ -38,10 +45,8 @@ func (obs *Observer) Observe() {
 			}
 
 			if !shouldRestart {
-				continue
+				return
 			}
-
-			fmt.Println("File changed")
 		case msg, ok := <-errChan:
 			if !ok {
 				// Channel was closed
@@ -51,7 +56,6 @@ func (obs *Observer) Observe() {
 			fmt.Println(msg.Error())
 		}
 	}
-
 }
 
 func (obs *Observer) Close() error {
@@ -72,10 +76,19 @@ func new(cfg config.Config) (*Observer, error) {
 	return &obs, nil
 }
 
-func (obs *Observer) eventListener(notifChan chan bool, errChan chan error) {
+func (obs *Observer) close() error {
+	err := obs.watcher.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func eventListener(watcher *fsnotify.Watcher, notifChan chan bool, errChan chan error) {
 	for {
 		select {
-		case event, ok := <-obs.watcher.Events:
+		case event, ok := <-watcher.Events:
 			if !ok {
 				// Channel was closed (Watcher.Close() was called).
 				//
@@ -91,7 +104,7 @@ func (obs *Observer) eventListener(notifChan chan bool, errChan chan error) {
 				notifChan <- true
 			}
 
-		case err, ok := <-obs.watcher.Errors:
+		case err, ok := <-watcher.Errors:
 			fmt.Println(err.Error())
 			if !ok {
 				// Channel was closed (Watcher.Close() was called).
@@ -107,8 +120,8 @@ func (obs *Observer) eventListener(notifChan chan bool, errChan chan error) {
 	}
 }
 
-func (obs *Observer) close() error {
-	err := obs.watcher.Close()
+func watchTarget(watcher *fsnotify.Watcher, target string, errChan chan error) error {
+	err := watcher.Add(target)
 	if err != nil {
 		return err
 	}
