@@ -48,7 +48,7 @@ func init() {
 	/*
 	 *  Global Flags
 	 */
-	rootCmd.PersistentFlags().Float32VarP(&cfg.debounce, "debounce", "d", 0.3, "Time to wait in-Seconds between events before restarting the runner")
+	rootCmd.PersistentFlags().StringVarP(&cfg.debounce, "debounce", "d", "1.5s", "Time to wait in-between events before restarting the runner. such as \"300ms\". Valid time units are \"ns\", \"us\" (or \"µs\"), \"ms\", \"s\", \"m\", \"h\".")
 
 	rootCmd.PersistentFlags().StringSliceVarP(&cfg.ignore, "ignore", "i", []string{}, "Exclude files/directories matching the provided glob pattern.")
 

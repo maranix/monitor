@@ -1,7 +1,7 @@
 package config
 
 type Config interface {
-	GetDebounce() float32
+	GetDebounce() string
 	GetIgnoreTarget() []string
 	GetRunner() string
 	GetTarget() string

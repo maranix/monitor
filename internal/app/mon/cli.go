@@ -1,12 +1,14 @@
 package mon
 
 type Config struct {
-	// Debounce duration in seconds
+	// Debounce duration in specified in human readable format,
+	// such as "300ms". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	//
 	// Duration to wait before re-executing the command on detecting
 	// subsequent changes in a short succession.
 	//
-	// Defaults to 300ms.
-	debounce float32
+	// Defaults to 1.5s.
+	debounce string
 
 	// A slice of glob patterns or path to dirs/files
 	//
@@ -36,7 +38,7 @@ type Config struct {
 // Creates a new empty Config.
 func createConfig() *Config {
 	cfg := Config{
-		debounce: 0,
+		debounce: "",
 		ignore:   []string{},
 		run:      "",
 		target:   "",
@@ -46,7 +48,7 @@ func createConfig() *Config {
 	return &cfg
 }
 
-func (c *Config) GetDebounce() float32 {
+func (c *Config) GetDebounce() string {
 	return c.debounce
 }
 
