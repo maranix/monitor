@@ -92,6 +92,16 @@ func (obs *Observer) close() error {
 }
 
 func eventListener(watcher *fsnotify.Watcher, debouncer *debouncer.Debouncer, notifChan chan bool, errChan chan error) {
+	if watcher == nil {
+		errChan <- errors.New("Expected a reference to watcher but received nil.\nThis scenario should never happen, please file a bug report or open an issue in the source repostiory for further debugging and support.")
+		return
+	}
+
+	if debouncer == nil {
+		errChan <- errors.New("Expected a reference to debouncer but received nil.\nThis scenario should never happen, please file a bug report or open an issue in the source repostiory for further debugging and support.")
+		return
+	}
+
 	for {
 		select {
 		case event, ok := <-watcher.Events:
