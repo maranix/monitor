@@ -26,12 +26,13 @@ func NewObserver(cfg config.Config) (*Observer, error) {
 }
 
 func (obs *Observer) Observe() {
-	watcher := obs.watcher
-	target := obs.config.GetTarget()
-
 	notifChan := make(chan bool)
 	errChan := make(chan error)
+	defer close(notifChan)
+	defer close(errChan)
 
+	watcher := obs.watcher
+	target := obs.config.GetTarget()
 	debouncer, err := debouncer.NewDebouncer(obs.config.GetDebounce())
 	if err != nil {
 		errChan <- err
