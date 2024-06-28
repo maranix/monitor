@@ -3,6 +3,7 @@ package observer
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/maranix/monitor/pkg/config"
@@ -53,6 +54,8 @@ func (obs *Observer) Observe() {
 			}
 
 			if shouldRestart {
+				/// Clear out the terminal before spawning a new process
+				os.Stdin.WriteString("\033[H\033[2J")
 				runner.Run(obs.config.GetRunner())
 			}
 		case msg, ok := <-errChan:
