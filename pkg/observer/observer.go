@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -45,6 +46,8 @@ func (obs *Observer) Observe() {
 		fmt.Println(err.Error())
 	}
 
+	var cancel context.CancelFunc
+	ctx := context.Background()
 	for {
 		select {
 		case shouldRestart, ok := <-notifChan:
@@ -54,9 +57,19 @@ func (obs *Observer) Observe() {
 			}
 
 			if shouldRestart {
-				/// Clear out the terminal before spawning a new process
+				// Clear out the terminal before spawning a new process
 				os.Stdin.WriteString("\033[H\033[2J")
-				runner.Run(obs.config.GetRunner())
+
+				// Cancel and clear up any previous running resources before spawing a new one
+				if cancel != nil {
+					cancel()
+				}
+
+				cancel, err = runner.RunContext(ctx, obs.config.GetRunner())
+				if err != nil {
+					errChan <- err
+					cancel()
+				}
 			}
 		case msg, ok := <-errChan:
 			fmt.Println(msg.Error())
